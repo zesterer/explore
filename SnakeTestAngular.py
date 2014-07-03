@@ -7,7 +7,8 @@ import math
 
 width, height = 640, 480
 fwidth, fheight = 40, 30
-interval = 150
+sinterval = 80
+interval = sinterval
 tick = 0
 
 def Refresh2D(width, height, fwidth, fheight):
@@ -49,12 +50,18 @@ def DrawFood():
 	for x, y in food:
 		DrawRect(x, y, 1, 1)
 
+def PointRectIntersect(x1, y1, x, y, w, h):
+	if x1 > x and y1 > y and x1 < x + w and y1 < y + h:
+		return True
+	return False
+
 def Update(value):
-	global tick, dead_time, snake, snake_dir
+	global tick, dead_time, snake, snake_dir, angle, keys, length, interval
 
 	if dead_time == 0:
 		snake.insert(0, AddVectors(snake[0], snake_dir))
-		snake.pop()
+		if len(snake) > length:
+			snake.pop()
 
 	if snake[0][0] >= fwidth:
 		snake[0] = (0, snake[0][1])
@@ -66,22 +73,33 @@ def Update(value):
 		snake[0] = (snake[0][0], fheight)
 
 	for part in snake[2:]:
-		if snake[0] == part and dead_time == 0:
-			dead_time = 10
+		if PointRectIntersect(snake[0][0], snake[0][1], part[0], part[1], 1, 1):
+			if dead_time == 0:
+				dead_time = 10
 
 	(hx, hy) = snake[0]
 	for x, y in food:
-		if hx == x and hy == y:
-			snake.append((x, y))
-			snake.append((x, y))
+		if PointRectIntersect(hx, hy, x - 1, y - 1, 2, 2):
+			length += 4
+			interval -= 1
 			x, y = randint(1, fwidth - 1), randint(1, fheight - 1)
 			food[0] = (x, y)
+
+	if keys["a"] == True:
+		angle -= 20
+	if keys["d"]:
+		angle += 20
+
+	snake_dir = (math.sin(angle * math.pi / 180), math.cos(angle * math.pi / 180))
 
 	tick += 1
 	if dead_time > 0:
 		dead_time -= 1
 		if dead_time == 0:
-			snake = [(19, 15), (18, 15), (17, 15), (16, 15)]
+			snake = [(20, 15)]
+			length = 4
+			angle = 90
+			interval = sinterval
 			snake_dir = (1, 0)
 
 	glutTimerFunc(interval, Update, 0)
@@ -94,23 +112,24 @@ def Resize(w, h):
 def AddVectors(v1, v2):
 	return (v1[0] + v2[0], v1[1] + v2[1])
 
-def Keyboard(*args):
-	global snake_dir
+def KeyUp(key, x, y):
+	global keys
+	if key == b"a":
+		keys["a"] = False
+	if key == b"d":
+		keys["d"] = False
 
-	old = snake_dir
+def KeyDown(key, x, y):
+	global keys
+	if key == b"a":
+		keys["a"] = True
+	if key == b"d":
+		keys["d"] = True
 
-	if dead_time == 0:
-		if args[0] == b"w":
-			snake_dir = (0, 1)
-		if args[0] == b"s":
-			snake_dir = (0, -1)
-		if args[0] == b"a":
-			snake_dir = (-1, 0)
-		if args[0] == b"d":
-			snake_dir = (1, 0)
+	snake_dir = (math.sin(angle * math.pi / 180), math.cos(angle * math.pi / 180))
 
-	if abs(snake_dir[0] - old[0]) == 2 or abs(snake_dir[1] - old[1]) == 2:
-		snake_dir = old
+	#if abs(snake_dir[0] - old[0]) == 2 or abs(snake_dir[1] - old[1]) == 2:
+		#snake_dir = old
 
 glutInit()
 glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH)
@@ -119,9 +138,17 @@ glutInitWindowPosition(0, 0)
 
 window = glutCreateWindow("Snake Game")
 
-snake = [(19, 15), (18, 15), (17, 15), (16, 15)]
+snake = [(20, 15)]
 snake_dir = (1, 0)
+length = 4
+angle = 90
 dead_time = 0
+
+keys = dict()
+keys["a"] = False
+keys["d"] = False
+keys["w"] = False
+keys["s"] = False
 
 food = []
 x, y = randint(0, fwidth), randint(0, fheight)
@@ -130,7 +157,9 @@ food.append((x, y))
 glutDisplayFunc(Draw)
 glutIdleFunc(Draw)
 glutTimerFunc(interval, Update, 0)
-glutKeyboardFunc(Keyboard)
 glutReshapeFunc(Resize)
+glutKeyboardFunc(KeyDown)
+glutKeyboardUpFunc(KeyUp)
+glutIgnoreKeyRepeat(True)
 
 glutMainLoop()
