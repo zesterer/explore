@@ -1,6 +1,8 @@
 explore
 =======
 
+## Note: This Project Has Merged Into NILTS. You Can Find NILTS here: http://www.github.com/zesterer/nilts/
+
 A voxel-based exploration game to be
 
 I have no idea where this idea is going, how it will go, whether I will ever finish it, or whether it's the kind of thing that can be finished. Maybe I'll give the game sentient intelligence and it can develop itself.
